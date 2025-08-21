@@ -37,8 +37,14 @@ export class PWAService {
         });
 
       } catch (error) {
-        console.error('Service Worker registration failed:', error);
+        console.warn('Service Worker registration failed:', error);
+        // Gracefully handle environments that don't support Service Workers (like StackBlitz)
+        if (error instanceof Error && error.message.includes('not yet supported')) {
+          console.info('Running in an environment without Service Worker support. PWA features will be limited.');
+        }
       }
+    } else {
+      console.info('Service Workers are not supported in this browser.');
     }
   }
 
