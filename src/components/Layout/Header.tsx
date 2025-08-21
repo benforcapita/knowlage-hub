@@ -1,9 +1,12 @@
 import React from 'react';
-import { Search, Sun, Moon, Shield } from 'lucide-react';
+import { Search, Sun, Moon, Shield, LogOut, User as UserIcon } from 'lucide-react';
+import { useAuth } from '../Auth/AuthProvider';
+import { User } from '../../types/auth';
 
 interface HeaderProps {
   theme: 'light' | 'dark';
   onThemeToggle: () => void;
+  user: User | null;
   searchQuery: string;
   onSearchChange: (query: string) => void;
   searchPlaceholder?: string;
@@ -12,10 +15,19 @@ interface HeaderProps {
 export function Header({ 
   theme, 
   onThemeToggle, 
+  user,
   searchQuery, 
   onSearchChange, 
   searchPlaceholder = "Search..." 
 }: HeaderProps) {
+  const { logout } = useAuth();
+
+  const handleLogout = async () => {
+    if (confirm('Are you sure you want to sign out?')) {
+      await logout();
+    }
+  };
+
   return (
     <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
       <div className="flex items-center justify-between">
@@ -37,6 +49,35 @@ export function Header({
             <Shield className="w-4 h-4" />
             <span>Encrypted</span>
           </div>
+          
+          {user && (
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                {user.avatar ? (
+                  <img 
+                    src={user.avatar} 
+                    alt={user.name}
+                    className="w-8 h-8 rounded-full"
+                  />
+                ) : (
+                  <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
+                    <UserIcon className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                  </div>
+                )}
+                <span className="text-sm text-gray-700 dark:text-gray-300 hidden sm:inline">
+                  {user.name}
+                </span>
+              </div>
+              
+              <button
+                onClick={handleLogout}
+                className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                title="Sign out"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
+          )}
           
           <button
             onClick={onThemeToggle}

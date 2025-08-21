@@ -45,6 +45,11 @@ class StorageService {
           db.createObjectStore('password_categories', { keyPath: 'id' });
         }
 
+        // Auth stores
+        if (!db.objectStoreNames.contains('auth_users')) {
+          db.createObjectStore('auth_users', { keyPath: 'username' });
+        }
+
         // Settings store
         if (!db.objectStoreNames.contains('settings')) {
           db.createObjectStore('settings', { keyPath: 'key' });

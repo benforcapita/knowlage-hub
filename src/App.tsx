@@ -1,4 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { AuthProvider, useAuth } from './components/Auth/AuthProvider';
+import { LoginForm } from './components/Auth/LoginForm';
+import { InstallPrompt } from './components/Layout/InstallPrompt';
 import { Sidebar } from './components/Layout/Sidebar';
 import { Header } from './components/Layout/Header';
 import { NotesModule } from './components/Notes/NotesModule';
@@ -7,8 +10,10 @@ import { PasswordsModule } from './components/Passwords/PasswordsModule';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useDatabase } from './hooks/useDatabase';
 import { AppSettings, Module } from './types';
+import { PWAService } from './utils/pwa';
 
-function App() {
+function AppContent() {
+  const { isAuthenticated, isLoading: authLoading, user } = useAuth();
   const [settings, setSettings] = useLocalStorage<AppSettings>('app-settings', {
     theme: 'light',
     currentModule: 'notes',
@@ -17,6 +22,20 @@ function App() {
   
   const [searchQuery, setSearchQuery] = useState('');
   const { isInitialized, error } = useDatabase();
+
+  useEffect(() => {
+    const initPWA = async () => {
+      const pwaService = PWAService.getInstance();
+      await pwaService.init();
+      
+      // Request notification permission after user is authenticated
+      if (isAuthenticated) {
+        await pwaService.requestNotificationPermission();
+      }
+    };
+
+    initPWA();
+  }, [isAuthenticated]);
 
   useEffect(() => {
     if (settings.theme === 'dark') {
@@ -50,6 +69,24 @@ function App() {
       default: return 'Search...';
     }
   };
+
+  if (authLoading) {
+    return <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
+      <div className="text-center">
+        <div className="w-16 h-16 mx-auto mb-4 bg-blue-200 dark:bg-blue-800 rounded-full flex items-center justify-center animate-pulse">
+          <div className="w-8 h-8 bg-blue-600 dark:bg-blue-400 rounded-full"></div>
+        </div>
+        <h1 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+          Loading Knowledge Vault
+        </h1>
+        <p className="text-gray-600 dark:text-gray-400">Preparing your secure workspace...</p>
+      </div>
+    </div>;
+  }
+
+  if (!isAuthenticated) {
+    return <LoginForm />;
+  }
 
   if (error) {
     return (
@@ -96,6 +133,7 @@ function App() {
         <Header
           theme={settings.theme}
           onThemeToggle={handleThemeToggle}
+          user={user}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
           searchPlaceholder={getSearchPlaceholder()}
@@ -113,7 +151,17 @@ function App() {
           )}
         </main>
       </div>
+      
+      <InstallPrompt />
     </div>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }
 
